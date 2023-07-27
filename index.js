@@ -349,10 +349,26 @@ router.get('/', async ctx => {
 app.use(router.routes())
 app.use(router.allowedMethods())
 
-fs.rm('uploads', {recursive: true}, (err) => {
-  if (err) throw err
-  mkdirp('uploads').then (() => {
-    app.listen(port)
-    console.log('server is listening on port ' + port)
-  })
-})
+if (!process.env.UPLOADSVOLUME) {
+  fs.access('uploads', (error) => {
+    if (error) {
+      console.log("Directory does not exist. Creating...");
+      mkdirp('uploads').then(() => {
+        app.listen(port);
+        console.log('server is listening on port ' + port);
+      });
+    } else {
+      fs.rm('uploads', {recursive: true}, (err) => {
+        if (err) throw err;
+        mkdirp('uploads').then (() => {
+          app.listen(port);
+          console.log('server is listening on port ' + port);
+        });
+      });
+    }
+  });
+} else {
+  app.listen(port);
+  console.log('using docker volume for uploads, server up on port ' + port);
+}
+
